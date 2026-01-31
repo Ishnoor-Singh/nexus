@@ -1,36 +1,88 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Nexus
 
-## Getting Started
+Your personal AI that actually knows you. A PKM (Personal Knowledge Management) system with an AI that has persistent memory and personality.
 
-First, run the development server:
+## Features
+
+- **Save anything**: Text notes, YouTube videos (with transcripts), articles, Instagram/TikTok links, images
+- **Chat with your AI**: Ask questions about your saved content
+- **Semantic search**: Find things by meaning, not just keywords
+- **Persistent memory**: Your AI remembers conversations and context
+- **Personality**: Customize your AI's name and vibe
+
+## Tech Stack
+
+- **Framework**: Next.js 15 (App Router)
+- **Database**: Convex (real-time, vector search)
+- **UI**: Tailwind CSS + shadcn/ui
+- **AI**: OpenAI (embeddings + chat)
+
+## Setup
+
+### 1. Clone and install
+
+```bash
+git clone https://github.com/Ishnoor-Singh/nexus.git
+cd nexus
+npm install
+```
+
+### 2. Set up Convex
+
+```bash
+npx convex dev
+```
+
+This will:
+- Prompt you to log in to Convex
+- Create a new project
+- Generate the `.env.local` file with your Convex URL
+
+### 3. Add OpenAI API key
+
+Add to `.env.local`:
+
+```
+OPENAI_API_KEY=sk-your-key-here
+```
+
+### 4. Run the app
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+nexus/
+├── convex/           # Backend (Convex functions)
+│   ├── schema.ts     # Database schema
+│   ├── notes.ts      # Note CRUD operations
+│   ├── messages.ts   # Chat history
+│   └── settings.ts   # AI personality settings
+├── src/
+│   ├── app/          # Next.js app router
+│   ├── components/   # React components
+│   │   └── ui/       # shadcn/ui components
+│   └── lib/          # Utilities
+└── ...
+```
 
-## Learn More
+## Roadmap
 
-To learn more about Next.js, take a look at the following resources:
+- [x] Project setup
+- [ ] Note capture (text, URL detection)
+- [ ] YouTube transcript extraction
+- [ ] Chat UI
+- [ ] Semantic search (RAG)
+- [ ] AI personality settings
+- [ ] Article extraction
+- [ ] Instagram/TikTok oEmbed
+- [ ] Image upload + AI description
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## License
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT
