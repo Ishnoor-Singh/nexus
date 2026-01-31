@@ -9,7 +9,8 @@ export const generateResponse = action({
     characterId: v.id("characters"),
     userMessage: v.string(),
   },
-  handler: async (ctx, args) => {
+  returns: v.string(),
+  handler: async (ctx, args): Promise<string> => {
     // Get character details
     const character = await ctx.runQuery(api.characters.get, {
       id: args.characterId,
@@ -137,9 +138,10 @@ export const processConversation = action({
     userMessage: v.string(),
     aiResponse: v.string(),
   },
-  handler: async (ctx, args) => {
+  returns: v.null(),
+  handler: async (ctx, args): Promise<null> => {
     const anthropicKey = process.env.ANTHROPIC_API_KEY;
-    if (!anthropicKey) return;
+    if (!anthropicKey) return null;
 
     // Get existing goals for context
     const existingGoals = await ctx.runQuery(api.goals.list, {
@@ -198,7 +200,7 @@ Respond ONLY with valid JSON, nothing else.`;
       }),
     });
 
-    if (!response.ok) return;
+    if (!response.ok) return null;
 
     const data = await response.json();
     const text = data.content[0].text.trim();
@@ -286,6 +288,7 @@ Respond ONLY with valid JSON, nothing else.`;
     } catch (e) {
       console.error("Failed to process conversation:", e);
     }
+    return null;
   },
 });
 
