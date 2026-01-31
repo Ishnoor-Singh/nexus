@@ -41,6 +41,11 @@ export default function ChatPage() {
     conversationId ? { conversationId } : "skip"
   );
   
+  const activityLogs = useQuery(
+    api.messages.getActivityLogs,
+    conversationId ? { conversationId, limit: 50 } : "skip"
+  );
+  
   const sendMessage = useMutation(api.messages.send);
   const generateResponse = useAction(api.ai.generateResponse);
   const resetCharacter = useMutation(api.characters.reset);
@@ -261,45 +266,71 @@ export default function ChatPage() {
           </div>
         )}
         
-        {messages?.map((msg, i) => (
-          <div
-            key={msg._id}
-            className={`flex gap-3 ${msg.role === "user" ? "justify-end" : ""} animate-slideUp`}
-            style={{ animationDelay: `${Math.min(i * 0.05, 0.3)}s`, animationFillMode: 'both' }}
-          >
-            {msg.role !== "user" && (
-              <div 
-                className="w-9 h-9 rounded-xl flex items-center justify-center text-base flex-shrink-0"
-                style={{ 
-                  backgroundColor: character.color + "20",
-                  boxShadow: `0 2px 12px ${character.color}20`
-                }}
+        {messages?.map((msg, i) => {
+          // Find activity logs that happened right after this message (within 5 seconds)
+          const logsAfterThisMsg = msg.role === "assistant" && activityLogs
+            ? activityLogs.filter(log => 
+                log.createdAt > msg.createdAt && 
+                log.createdAt < msg.createdAt + 10000
+              ).reverse()
+            : [];
+          
+          return (
+            <div key={msg._id}>
+              <div
+                className={`flex gap-3 ${msg.role === "user" ? "justify-end" : ""} animate-slideUp`}
+                style={{ animationDelay: `${Math.min(i * 0.05, 0.3)}s`, animationFillMode: 'both' }}
               >
-                {character.emoji}
-              </div>
-            )}
-            
-            <div
-              className={`max-w-[75%] px-4 py-3 ${
-                msg.role === "user"
-                  ? "chat-bubble-user text-white"
-                  : "chat-bubble-assistant"
-              }`}
-            >
-              <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
-            </div>
-            
-            {msg.role === "user" && (
-              <div className="w-9 h-9 rounded-xl bg-[--muted] flex items-center justify-center text-base flex-shrink-0">
-                {user?.imageUrl ? (
-                  <img src={user.imageUrl} alt="" className="w-full h-full rounded-xl object-cover" />
-                ) : (
-                  "👤"
+                {msg.role !== "user" && (
+                  <div 
+                    className="w-9 h-9 rounded-xl flex items-center justify-center text-base flex-shrink-0"
+                    style={{ 
+                      backgroundColor: character.color + "20",
+                      boxShadow: `0 2px 12px ${character.color}20`
+                    }}
+                  >
+                    {character.emoji}
+                  </div>
+                )}
+                
+                <div
+                  className={`max-w-[75%] px-4 py-3 ${
+                    msg.role === "user"
+                      ? "chat-bubble-user text-white"
+                      : "chat-bubble-assistant"
+                  }`}
+                >
+                  <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                </div>
+                
+                {msg.role === "user" && (
+                  <div className="w-9 h-9 rounded-xl bg-[--muted] flex items-center justify-center text-base flex-shrink-0">
+                    {user?.imageUrl ? (
+                      <img src={user.imageUrl} alt="" className="w-full h-full rounded-xl object-cover" />
+                    ) : (
+                      "👤"
+                    )}
+                  </div>
                 )}
               </div>
-            )}
-          </div>
-        ))}
+              
+              {/* Activity logs after assistant messages */}
+              {logsAfterThisMsg.length > 0 && (
+                <div className="ml-12 mt-2 space-y-1 animate-fadeIn">
+                  {logsAfterThisMsg.map((log) => (
+                    <div 
+                      key={log._id}
+                      className="text-xs text-[--muted-foreground] px-3 py-1.5 bg-[--muted]/30 
+                        rounded-lg inline-block mr-2 border border-[--border]/50"
+                    >
+                      {log.summary}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
         
         {isTyping && (
           <div className="flex gap-3 animate-fadeIn">

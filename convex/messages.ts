@@ -92,3 +92,18 @@ export const getRecentMessages = query({
     return messages.reverse(); // Return in chronological order
   },
 });
+
+// Get activity logs for a conversation
+export const getActivityLogs = query({
+  args: { 
+    conversationId: v.id("conversations"),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("activityLogs")
+      .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
+      .order("desc")
+      .take(args.limit || 20);
+  },
+});

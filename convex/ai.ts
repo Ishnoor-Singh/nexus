@@ -120,8 +120,9 @@ IMPORTANT: Talk naturally like you're texting a friend. No asterisk actions, no 
       content: aiResponse,
     });
 
-    // Trigger conversation processing in the background (memories, goals, diary)
+    // Trigger conversation processing in the background (memories, goals, diary, soul)
     ctx.runAction(internal.ai.processConversation, {
+      conversationId: args.conversationId,
       characterId: args.characterId,
       userMessage: args.userMessage,
       aiResponse: aiResponse,
@@ -131,9 +132,10 @@ IMPORTANT: Talk naturally like you're texting a friend. No asterisk actions, no 
   },
 });
 
-// Proactively manage memories, goals, and reflections after each exchange
+// Proactively manage memories, goals, reflections, and soul evolution after each exchange
 export const processConversation = action({
   args: {
+    conversationId: v.id("conversations"),
     characterId: v.id("characters"),
     userMessage: v.string(),
     aiResponse: v.string(),
@@ -173,7 +175,12 @@ Respond with JSON:
     "update": [{"title": "existing goal", "progress": "progress note"}]
   },
   "shouldWriteDiary": true/false,
-  "diaryThought": "brief thought for diary if shouldWriteDiary is true"
+  "diaryThought": "brief thought for diary if shouldWriteDiary is true",
+  "soulEvolution": {
+    "newTrait": "a trait I'm developing (or null)",
+    "newQuirk": "a quirk I've picked up (or null)",
+    "reflection": "how this interaction shaped me (or null)"
+  }
 }
 
 Guidelines:
@@ -183,6 +190,8 @@ Guidelines:
 - Add "reflection" type memories for your own observations about the relationship
 - Suggest diary entry after meaningful emotional conversations
 - Don't over-index on trivial details
+- Soul evolution should be rare and meaningful (maybe 1 in 10 conversations)
+- New traits/quirks should feel earned through repeated interactions
 
 Respond ONLY with valid JSON, nothing else.`;
 
@@ -218,6 +227,11 @@ Respond ONLY with valid JSON, nothing else.`;
               type: memory.type,
               importance: memory.importance,
             });
+            await ctx.runMutation(internal.ai.logActivity, {
+              conversationId: args.conversationId,
+              type: "memory_added",
+              summary: `🧠 Remembered: ${memory.content.slice(0, 50)}${memory.content.length > 50 ? '...' : ''}`,
+            });
           }
         }
       }
@@ -231,6 +245,11 @@ Respond ONLY with valid JSON, nothing else.`;
               title: goal.title,
               description: goal.description,
               priority: goal.priority || "medium",
+            });
+            await ctx.runMutation(internal.ai.logActivity, {
+              conversationId: args.conversationId,
+              type: "goal_created",
+              summary: `🎯 New goal: ${goal.title}`,
             });
           }
         }
@@ -250,6 +269,11 @@ Respond ONLY with valid JSON, nothing else.`;
               id: matchingGoal._id,
               status: "completed",
             });
+            await ctx.runMutation(internal.ai.logActivity, {
+              conversationId: args.conversationId,
+              type: "goal_completed",
+              summary: `✅ Completed: ${matchingGoal.title}`,
+            });
           }
         }
       }
@@ -264,6 +288,11 @@ Respond ONLY with valid JSON, nothing else.`;
               type: "goal_progress",
               importance: 6,
             });
+            await ctx.runMutation(internal.ai.logActivity, {
+              conversationId: args.conversationId,
+              type: "goal_progress",
+              summary: `📝 Progress on "${update.title}"`,
+            });
           }
         }
       }
@@ -276,12 +305,41 @@ Respond ONLY with valid JSON, nothing else.`;
         });
         
         if (!existingEntry) {
-          // Create a new diary entry with the thought
           await ctx.runMutation(api.diary.upsert, {
             characterId: args.characterId,
             date: today,
             content: actions.diaryThought,
             mood: "💭",
+          });
+          await ctx.runMutation(internal.ai.logActivity, {
+            conversationId: args.conversationId,
+            type: "diary_written",
+            summary: `📔 Wrote in diary`,
+          });
+        }
+      }
+      
+      // Process soul evolution
+      if (actions.soulEvolution) {
+        const { newTrait, newQuirk, reflection } = actions.soulEvolution;
+        if (newTrait || newQuirk || reflection) {
+          await ctx.runMutation(internal.ai.evolveSoul, {
+            characterId: args.characterId,
+            newTrait: newTrait || undefined,
+            newQuirk: newQuirk || undefined,
+            reflection: reflection || undefined,
+          });
+          
+          const evolutionSummary = newTrait 
+            ? `✨ Developing trait: ${newTrait}`
+            : newQuirk 
+              ? `✨ New quirk: ${newQuirk}`
+              : `✨ Soul reflection added`;
+          
+          await ctx.runMutation(internal.ai.logActivity, {
+            conversationId: args.conversationId,
+            type: "soul_evolved",
+            summary: evolutionSummary,
           });
         }
       }
@@ -294,6 +352,70 @@ Respond ONLY with valid JSON, nothing else.`;
 
 // Legacy function name for compatibility
 export const extractMemories = processConversation;
+
+// Internal mutation to log activity
+export const logActivity = internalMutation({
+  args: {
+    conversationId: v.id("conversations"),
+    type: v.union(
+      v.literal("memory_added"),
+      v.literal("goal_created"),
+      v.literal("goal_completed"),
+      v.literal("goal_progress"),
+      v.literal("diary_written"),
+      v.literal("soul_evolved")
+    ),
+    summary: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.insert("activityLogs", {
+      conversationId: args.conversationId,
+      type: args.type,
+      summary: args.summary,
+      createdAt: Date.now(),
+    });
+  },
+});
+
+// Internal mutation to evolve soul
+export const evolveSoul = internalMutation({
+  args: {
+    characterId: v.id("characters"),
+    newTrait: v.optional(v.string()),
+    newQuirk: v.optional(v.string()),
+    reflection: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const character = await ctx.db.get(args.characterId);
+    if (!character) return;
+    
+    const soul = { ...character.soul };
+    
+    // Add new trait if not already present
+    if (args.newTrait && !soul.traits.includes(args.newTrait)) {
+      soul.traits = [...soul.traits, args.newTrait];
+    }
+    
+    // Append to quirks
+    if (args.newQuirk) {
+      soul.quirks = soul.quirks 
+        ? `${soul.quirks}\n- ${args.newQuirk}`
+        : `- ${args.newQuirk}`;
+    }
+    
+    // Append reflection to backstory
+    if (args.reflection) {
+      soul.backstory = soul.backstory
+        ? `${soul.backstory}\n\n${args.reflection}`
+        : args.reflection;
+    }
+    
+    await ctx.db.patch(args.characterId, {
+      soul,
+      updatedAt: Date.now(),
+    });
+  },
+});
 
 // Internal mutation to save memory
 export const saveMemory = internalMutation({

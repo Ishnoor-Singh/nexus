@@ -105,4 +105,20 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_conversation", ["conversationId"]),
+
+  // Activity logs - shows what the AI updated
+  activityLogs: defineTable({
+    conversationId: v.id("conversations"),
+    type: v.union(
+      v.literal("memory_added"),
+      v.literal("goal_created"),
+      v.literal("goal_completed"),
+      v.literal("goal_progress"),
+      v.literal("diary_written"),
+      v.literal("soul_evolved")
+    ),
+    summary: v.string(), // One-liner description
+    createdAt: v.number(),
+  })
+    .index("by_conversation", ["conversationId"]),
 });
