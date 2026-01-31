@@ -90,7 +90,8 @@ export const remove = mutation({
 // Generate a diary entry based on recent conversations
 export const generate = action({
   args: { characterId: v.id("characters") },
-  handler: async (ctx, args) => {
+  returns: v.union(v.object({ error: v.string() }), v.object({ success: v.boolean(), content: v.string() })),
+  handler: async (ctx, args): Promise<{ error: string } | { success: boolean; content: string }> => {
     const anthropicKey = process.env.ANTHROPIC_API_KEY;
     if (!anthropicKey) throw new Error("ANTHROPIC_API_KEY not configured");
 
@@ -109,7 +110,7 @@ export const generate = action({
         conversationId: conversations[0]._id,
         limit: 30,
       });
-      recentMessages = messages.map(m => ({ role: m.role, content: m.content }));
+      recentMessages = messages.map((m: { role: string; content: string }) => ({ role: m.role, content: m.content }));
     }
 
     // Get recent memories

@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { action, internalMutation } from "./_generated/server";
+import { action, internalMutation, internalAction } from "./_generated/server";
 import { api, internal } from "./_generated/api";
 
 // Generate AI response
@@ -133,7 +133,7 @@ IMPORTANT: Talk naturally like you're texting a friend. No asterisk actions, no 
 });
 
 // Proactively manage memories, goals, reflections, and soul evolution after each exchange
-export const processConversation = action({
+export const processConversation = internalAction({
   args: {
     conversationId: v.id("conversations"),
     characterId: v.id("characters"),

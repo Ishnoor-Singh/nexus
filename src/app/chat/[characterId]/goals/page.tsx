@@ -23,7 +23,7 @@ const statusIcons: Record<string, string> = {
 export default function GoalsPage() {
   const { characterId } = useParams();
   const [showCreate, setShowCreate] = useState(false);
-  const [newGoal, setNewGoal] = useState({ title: "", description: "", priority: "medium" as const, dueDate: "" });
+  const [newGoal, setNewGoal] = useState<{ title: string; description: string; priority: "high" | "medium" | "low"; dueDate: string }>({ title: "", description: "", priority: "medium", dueDate: "" });
   
   const character = useQuery(api.characters.get, { 
     id: characterId as Id<"characters"> 
