@@ -1,85 +1,189 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface Props {
   onHatch: () => Promise<void>;
 }
 
 export function HatchingScreen({ onHatch }: Props) {
-  const [stage, setStage] = useState<"intro" | "hatching" | "hatched">("intro");
-  const [isLoading, setIsLoading] = useState(false);
+  const [stage, setStage] = useState<"intro" | "touching" | "hatching" | "hatched">("intro");
+  const [wobble, setWobble] = useState(false);
+
+  // Egg wobble animation
+  useEffect(() => {
+    if (stage === "intro") {
+      const interval = setInterval(() => {
+        setWobble(true);
+        setTimeout(() => setWobble(false), 500);
+      }, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [stage]);
 
   const handleClick = async () => {
     if (stage === "intro") {
-      setStage("hatching");
-      setIsLoading(true);
+      setStage("touching");
       
-      // Small delay for dramatic effect
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Suspenseful pause
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      setStage("hatching");
+      
+      // Hatching animation
+      await new Promise((resolve) => setTimeout(resolve, 2500));
       
       await onHatch();
       setStage("hatched");
-      setIsLoading(false);
-      
-      // Auto-dismiss after showing hatched state
-      setTimeout(() => {
-        // The parent component will handle the redirect
-      }, 1500);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-950">
-      <div className="text-center space-y-8 p-8 max-w-md">
-        {stage === "intro" && (
-          <>
-            <div className="text-8xl animate-pulse">🥚</div>
-            <h1 className="text-3xl font-bold">Welcome, new companion!</h1>
-            <p className="text-gray-400 text-lg">
-              A mysterious egg awaits you. Something inside stirs with anticipation...
-            </p>
-            <button
-              onClick={handleClick}
-              className="px-8 py-4 bg-orange-600 hover:bg-orange-500 rounded-xl font-semibold text-lg transition-all hover:scale-105 active:scale-95"
-            >
-              Touch the egg...
-            </button>
-          </>
-        )}
-
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
+      {/* Magical background */}
+      <div className="glow-bg" />
+      
+      {/* Sparkles */}
+      <div className="fixed inset-0 pointer-events-none">
         {stage === "hatching" && (
           <>
-            <div className="text-8xl animate-bounce">🥚</div>
-            <div className="space-y-2">
-              <p className="text-xl text-orange-400 animate-pulse">
-                Crack... crack...
-              </p>
-              <p className="text-gray-400">Something is emerging!</p>
-            </div>
-            <div className="flex justify-center gap-2">
-              <div className="w-3 h-3 bg-orange-500 rounded-full animate-bounce" />
-              <div className="w-3 h-3 bg-orange-500 rounded-full animate-bounce [animation-delay:0.1s]" />
-              <div className="w-3 h-3 bg-orange-500 rounded-full animate-bounce [animation-delay:0.2s]" />
-            </div>
+            {[...Array(20)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute text-2xl animate-ping"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  animationDelay: `${Math.random() * 2}s`,
+                  animationDuration: `${1 + Math.random()}s`,
+                }}
+              >
+                ✨
+              </div>
+            ))}
           </>
         )}
-
         {stage === "hatched" && (
           <>
-            <div className="text-8xl animate-bounce">🐉</div>
-            <h1 className="text-3xl font-bold text-orange-400">
-              Ember has hatched!
-            </h1>
-            <p className="text-gray-300 text-lg">
-              Your dragon familiar blinks at you with curious eyes, ready to begin your journey together.
-            </p>
-            <p className="text-gray-500 text-sm animate-pulse">
-              Taking you to meet your new companion...
-            </p>
+            {[...Array(30)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute text-xl"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  animation: `float ${2 + Math.random() * 2}s ease-in-out infinite`,
+                  animationDelay: `${Math.random() * 2}s`,
+                }}
+              >
+                {["✨", "💜", "⭐", "🌟"][Math.floor(Math.random() * 4)]}
+              </div>
+            ))}
           </>
         )}
       </div>
+      
+      <div className="text-center space-y-8 p-8 max-w-md relative z-10">
+        {stage === "intro" && (
+          <div className="animate-fadeIn">
+            <div 
+              className={`text-[120px] md:text-[150px] cursor-pointer transition-transform duration-300
+                ${wobble ? 'animate-wiggle' : ''} hover:scale-105`}
+              onClick={handleClick}
+              style={{ filter: 'drop-shadow(0 20px 60px rgba(251, 146, 60, 0.4))' }}
+            >
+              🥚
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold mt-8 mb-4">
+              Something stirs within...
+            </h1>
+            <p className="text-[--muted-foreground] text-lg mb-8">
+              A mysterious egg pulses with warmth. It seems to be waiting for your touch.
+            </p>
+            <button
+              onClick={handleClick}
+              className="btn-primary px-10 py-4 rounded-2xl font-semibold text-lg group"
+            >
+              <span className="flex items-center gap-2">
+                Touch the egg
+                <span className="group-hover:translate-x-1 transition-transform">👆</span>
+              </span>
+            </button>
+          </div>
+        )}
+
+        {stage === "touching" && (
+          <div className="animate-fadeIn">
+            <div 
+              className="text-[120px] md:text-[150px] animate-pulse"
+              style={{ filter: 'drop-shadow(0 20px 60px rgba(251, 146, 60, 0.6))' }}
+            >
+              🥚
+            </div>
+            <p className="text-2xl text-[--secondary] mt-8 animate-pulse">
+              The egg trembles...
+            </p>
+          </div>
+        )}
+
+        {stage === "hatching" && (
+          <div className="animate-fadeIn">
+            <div 
+              className="text-[120px] md:text-[150px] animate-bounce"
+              style={{ filter: 'drop-shadow(0 30px 80px rgba(139, 92, 246, 0.5))' }}
+            >
+              🥚
+            </div>
+            <div className="space-y-3 mt-8">
+              <p className="text-3xl font-bold text-gradient animate-pulse">
+                Crack... crack...
+              </p>
+              <p className="text-[--muted-foreground] text-lg">Something is emerging!</p>
+            </div>
+            <div className="flex justify-center gap-3 mt-8">
+              <div className="w-4 h-4 bg-[--primary] rounded-full animate-bounce" />
+              <div className="w-4 h-4 bg-[--primary] rounded-full animate-bounce" style={{ animationDelay: '0.15s' }} />
+              <div className="w-4 h-4 bg-[--primary] rounded-full animate-bounce" style={{ animationDelay: '0.3s' }} />
+            </div>
+          </div>
+        )}
+
+        {stage === "hatched" && (
+          <div className="animate-slideUp">
+            <div 
+              className="text-[120px] md:text-[150px]"
+              style={{ 
+                filter: 'drop-shadow(0 30px 80px rgba(251, 146, 60, 0.5))',
+                animation: 'float 3s ease-in-out infinite'
+              }}
+            >
+              🐉
+            </div>
+            <h1 className="text-4xl md:text-5xl font-bold mt-8 mb-4">
+              <span className="text-gradient-warm">Ember</span> has hatched!
+            </h1>
+            <p className="text-[--muted-foreground] text-lg mb-6">
+              Your dragon familiar blinks at you with curious, glowing eyes. 
+              A new journey begins...
+            </p>
+            <div className="flex items-center justify-center gap-2 text-[--muted-foreground] animate-pulse">
+              <div className="w-2 h-2 bg-[--primary] rounded-full animate-ping" />
+              <span>Preparing your first meeting...</span>
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {/* CSS for wiggle animation */}
+      <style jsx>{`
+        @keyframes wiggle {
+          0%, 100% { transform: rotate(0deg); }
+          25% { transform: rotate(-5deg); }
+          75% { transform: rotate(5deg); }
+        }
+        .animate-wiggle {
+          animation: wiggle 0.5s ease-in-out;
+        }
+      `}</style>
     </div>
   );
 }
