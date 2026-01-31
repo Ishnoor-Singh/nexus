@@ -14,8 +14,6 @@ import type * as diary from "../diary.js";
 import type * as goals from "../goals.js";
 import type * as memories from "../memories.js";
 import type * as messages from "../messages.js";
-import type * as notes from "../notes.js";
-import type * as settings from "../settings.js";
 import type * as starter from "../starter.js";
 
 import type {
@@ -31,8 +29,6 @@ declare const fullApi: ApiFromModules<{
   goals: typeof goals;
   memories: typeof memories;
   messages: typeof messages;
-  notes: typeof notes;
-  settings: typeof settings;
   starter: typeof starter;
 }>;
 
