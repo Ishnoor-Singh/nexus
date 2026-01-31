@@ -62,7 +62,7 @@ export const generateResponse = action({
     }
     
     if (goals.length > 0) {
-      contextSections.push(`## Their Active Goals\n${goals.map(g => `- ${g.title}${g.description ? ` (${g.description})` : ""}`).join("\n")}`);
+      contextSections.push(`## Their Active Goals\n${goals.map((g: { title: string; description?: string }) => `- ${g.title}${g.description ? ` (${g.description})` : ""}`).join("\n")}`);
     }
     
     if (todayDiary) {
@@ -74,7 +74,7 @@ export const generateResponse = action({
       : "";
 
     // Build conversation history
-    const conversationHistory = messages.map(m => ({
+    const conversationHistory = messages.map((m: { role: string; content: string }) => ({
       role: m.role as "user" | "assistant",
       content: m.content,
     }));
@@ -151,7 +151,7 @@ export const processConversation = action({
     });
     
     const goalsContext = existingGoals.length > 0 
-      ? `Current active goals:\n${existingGoals.filter(g => g.status === "active").map(g => `- ${g.title}`).join("\n")}`
+      ? `Current active goals:\n${existingGoals.filter((g: { status: string }) => g.status === "active").map((g: { title: string }) => `- ${g.title}`).join("\n")}`
       : "No goals set yet.";
 
     const prompt = `You are an AI companion analyzing a conversation to maintain your memory and track your human's goals.
@@ -262,7 +262,7 @@ Respond ONLY with valid JSON, nothing else.`;
             characterId: args.characterId,
           });
           const matchingGoal = existingGoals.find(
-            g => g.title.toLowerCase().includes(goalTitle.toLowerCase()) && g.status === "active"
+            (g: { title: string; status: string; _id: unknown }) => g.title.toLowerCase().includes(goalTitle.toLowerCase()) && g.status === "active"
           );
           if (matchingGoal) {
             await ctx.runMutation(api.goals.updateStatus, {
