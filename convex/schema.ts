@@ -121,4 +121,27 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_conversation", ["conversationId"]),
+
+  // Data stores - AI-created mini apps / structured data
+  dataStores: defineTable({
+    characterId: v.id("characters"),
+    name: v.string(),              // "workouts", "books", "mood_log"
+    description: v.string(),       // AI's description of what this store is for
+    icon: v.optional(v.string()),  // Emoji icon for the store
+    schema: v.optional(v.any()),   // Optional schema hint for the AI
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_character", ["characterId"])
+    .index("by_character_name", ["characterId", "name"]),
+
+  // Data entries - individual records in a store
+  dataEntries: defineTable({
+    storeId: v.id("dataStores"),
+    data: v.any(),                 // Flexible JSON data
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_store", ["storeId"])
+    .index("by_store_created", ["storeId", "createdAt"]),
 });
