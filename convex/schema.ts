@@ -40,4 +40,26 @@ export default defineSchema({
     key: v.string(),
     value: v.any(),
   }).index("by_key", ["key"]),
+
+  // Data stores - AI-created mini apps / structured data
+  dataStores: defineTable({
+    name: v.string(),              // "workouts", "books", "mood_log"
+    description: v.string(),       // AI's description of what this store is for
+    icon: v.optional(v.string()),  // Emoji icon for the store
+    schema: v.optional(v.any()),   // Optional schema hint for the AI
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_name", ["name"])
+    .index("by_createdAt", ["createdAt"]),
+
+  // Data entries - individual records in a store
+  dataEntries: defineTable({
+    storeId: v.id("dataStores"),
+    data: v.any(),                 // Flexible JSON data
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_store", ["storeId"])
+    .index("by_store_created", ["storeId", "createdAt"]),
 });
